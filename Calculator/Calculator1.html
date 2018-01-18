@@ -1,0 +1,84 @@
+<html>
+<head>
+<style>
+ .short{height:50px;width:55px;float:left;}
+</style>
+</head>
+<body>
+<script>
+var xianshi="";
+var jisuan="";
+var huanchun="";
+function num(a){
+  if(jisuan==""&&huanchun==""&&isNaN(a))return 0;   //首次输入值不能为符号
+  var pingmu=document.getElementById("pingmu");
+  if(!isNaN(a)){xianshi+=a;pingmu.value=xianshi;jisuan+=a;huanchun="";}
+  else{pingmu.value=a;xianshi="";jisuan=jisuan+huanchun+a;huanchun="";}
+}
+function sum(){
+  if(jisuan=="")renturn0;
+  document.getElementById("pingmu");
+  total=eval(jisuan)
+  pingmu.value=total;
+  jisuan="";xianshi="";huanchun=total;
+}
+function ten(){
+  var total=0,pows=0
+  var pingmu=document.getElementById("pingmu");
+  var value=pingmu.value;
+  var arr=value.split("");
+  arr=arr.reverse();
+  for(i=0;i<arr.length;i++){
+  arr[i]-=0;
+  pows=Math.pow(2,i);
+  total+=arr[i]*pows;
+  }
+  pingmu.value=total;
+  jisuan="";xianshi="";
+}
+function two(){
+  var pingmu=document.getElementById("pingmu");
+  var value=pingmu.value;
+  value-=0;
+  var arr=new Array();
+  for(i=0;1;i++){
+  if(value==0)break;
+  arr[i]=value%2;
+  value/=2;
+  value=parseInt(value);
+  }
+  arr=arr.reverse();
+  str=arr.join("");
+  pingmu.value=str;
+  xianshi="";jisuan="";
+}
+function ccc(){
+  jisuan="";xianshi="";huanchun="";
+  document.getElementById("pingmu").value="";
+}
+</script>
+
+<input type="text" id="pingmu" style="height:36px;width:276px;"/><br/><br/>
+<button value="7" class="short" onclick="num(this.value)">7</button>
+<button value="8" class="short" onclick="num(this.value)">8</button>
+<button value="9" class="short" onclick="num(this.value)">9</button>
+<button value="*" class="short" onclick="num(this.value)">*</button>
+<button value="/" class="short" onclick="num(this.value)">/</button><br/><br/><br/>
+<button value="4" class="short" onclick="num(this.value)">4</button>
+<button value="5" class="short" onclick="num(this.value)">5</button>
+<button value="6" class="short" onclick="num(this.value)">6</button>
+<button value="-" class="short" onclick="num(this.value)">-</button>
+<button value="%" class="short" onclick="num(this.value)">%</button><br/><br/><br/>
+<button value="1" class="short" onclick="num(this.value)">1</button>
+<button value="2" class="short" onclick="num(this.value)">2</button>
+<button value="3" class="short" onclick="num(this.value)">3</button>
+<button value="+" class="short" onclick="num(this.value)">+</button>
+<button value="=" class="short" onclick="sum()">=</button><br/><br/><br/>
+<button value="0" class="short" onclick="num(this.value)">0</button>
+<button value="00" class="short" onclick="num(this.value)">00</button>
+<button value="c" class="short" onclick="ccc()">c</button>
+<button value="x" class="short" onclick="ten()">ten</button>
+<button value="x" class="short" onclick="two()">two</button><br/><br/><br/>
+
+
+</body>

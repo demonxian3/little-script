@@ -1,0 +1,167 @@
+﻿<!--
+      /**********************************************
+       *  					    *
+       *  Author:  Demon			    *
+       *  Date:    2017/11/28			    *
+       *  Contact: 920248921@qq.com		    *
+       *  Description: 				    *
+       *      This program is written in Javascript,*
+       *    it can encode and decode data by some   *
+       *    method like URL-code，ChatCode and      *
+       *    Entity-coding etc.If you meet some      *
+       *    problem in this program,please contact  *
+       *    the author.				    *
+       **********************************************/
+-->
+
+
+<meta charset="utf-8">
+
+<h1 style="width:300px;text-align:center">
+      Encode/Decode
+</h1>
+<hr style="width:400px;margin-left:0px"><br>
+
+<div style="width:300px;height:300px;float:left;border:1px solid #c3c3c3;overflow:scroll" contenteditable="true" id="inp"></div>
+<div style="width:300px;height:300px;float:left;border:1px solid #c3c3c3;overflow:scroll" contenteditable="true" id="oup"></div>
+
+<input type="button" value="Encode" style="height:150px;cursor:pointer" onclick="URLencode()"/><br>
+<input type="button" value="Decode" style="height:150px;cursor:pointer" onclick="URLdecode()"/><br><br>
+
+Mode:
+<input type="button" value="ChatCode" onclick="changeToChatCode()" style="cursor:pointer">
+<input type="button" value="URLCode" onclick="changeToURLCode()" style="cursor:pointer">
+<input type="button" value="EntityCode" onclick="changeToEntityCode()" style="cursor:pointer">
+<script>
+
+  
+  //getElement from body
+  var input = document.getElementById("inp");
+  var output = document.getElementById("oup");
+
+
+  //编码模式:
+  var CodeMode = 0
+  var radix = 16;
+  var sign  = "%";
+
+
+  /************************
+   *     ChangeMode       *
+   ************************/
+
+  changeToURLCode = function(){
+    CodeMode = 0
+  }
+ 
+  changeToChatCode = function(){
+    CodeMode = 1
+  }
+
+  changeToEntityCode = function(){
+    CodeMode = 2
+  }
+
+
+
+
+  /************************
+   *    Encode Function   *
+   ************************/
+
+  URLencode = function(){
+
+
+
+    switch(CodeMode){
+      	case 0: 
+        	radix = 16;
+        	sign  = "%";
+        	break;
+   
+      	case 1:
+        	radix = 10;
+        	sign  = ",";
+        	break;
+
+      	case 2:
+        	radix = 16;
+        	sign  = "&amp;#";
+        	break;
+  
+    }//switch
+
+     	
+
+    var encResult = "";
+    var inpValue = input.innerHTML;
+
+     
+     	
+    if(inpValue.match("&amp;"))
+       inpValue = inpValue.replace(/[&]amp;/g,"&");                         //防符号"&" 开启HTML自动实体化
+
+     	
+    if(/<br>/.test(inpValue))
+       inpValue = inpValue.replace(/<br>/g,"");                             //防止自动产生了的<br>
+
+     	
+    if(/[&]lt;/.test(inpValue))
+       inpValue = inpValue.replace(/[&]lt;/g,"<");                          //防符号"<" HTML实体化
+
+     	
+    if(/[&]gt;/.test(inpValue))
+       inpValue = inpValue.replace(/[&]gt;/g,">");                          //防符号">" HTML实体化
+
+   
+
+
+
+    for(var i=0;i<inpValue.length;i++)
+       encResult += (sign + ""+inpValue.charCodeAt(i).toString(radix));
+
+
+    if(CodeMode == 2){
+      
+      var reg = /([&]amp;#\d{2,3})/g
+
+      encResult = encResult.replace(reg,"$1;")
+      
+    }
+     
+
+    output.innerHTML = encResult;
+  
+
+  }
+
+
+  /************************
+   *    Encode Function   *
+   ************************/
+
+
+  URLdecode = function(){
+
+     var decResult = "";
+     var inpValue = output.innerHTML;
+     var inpArr = inpValue.split(sign);
+
+
+     for(var i=1;i<inpArr.length;i++){
+       inpArr[i] = parseInt(inpArr[i],radix)
+       decResult += String.fromCharCode(inpArr[i]);
+     }
+     
+     
+
+     input.innerHTML = decResult;
+  }  
+
+
+
+
+
+
+
+</script>
