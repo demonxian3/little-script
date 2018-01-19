@@ -1,12 +1,17 @@
 #!/bin/bash
-#@Auth: Demon
-#@Date: 2018-01-18
-#@Desc: ban the host which try to  burst the root's password for ssh
 
 #grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' /var/log/secure|sort|uniq -c > illegal_IP.tmp
 #lastb |awk '{print $3}'|sort|uniq -c
 
-scanIP=`grep -e Invalid  /var/log/secure | awk '{print $10}'|sort |uniq -c`
+#2018-01-19 发现BUG 如果出现一行IP是空的如下，会导致奇偶顺序破坏
+#    4 12.145.151.21
+#    3 112.113.50.38
+#    3
+#    5 117.34.51.66 
+#空行产生的原因是ssh没有输入用户名导致 secure 文件里的 Invalid行中 awk print 10列不是IP地址而是空的
+#解决办法 过滤Received 而不是过滤 Invalid 
+
+scanIP=`grep -e Received /var/log/secure | awk '{print $9}'|sort |uniq -c`
 n=0
 needban=0
 for i in $scanIP
@@ -18,7 +23,8 @@ do
      fi
   else
      if [ $needban -eq 1 ]; then       #ADDRESS
-        banIP=$i
+        IP=$i
+        banIP=${IP%?}			#删除最后一个字符:
         needban=0
  
         #BAN
