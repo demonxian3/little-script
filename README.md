@@ -3,9 +3,9 @@
 
 ## Catalog    
 * -- Calculator    
-* -- CrawlScore.php    
+* -- CrawlScore    
 * -- CryptoTools    
-* -- ExploitCode    
+* -- GetPrivilege    
 * -- NetworkTools    
 * -- SSHprotecter.sh    
    
@@ -18,13 +18,14 @@ This is my first programe, although it is very simple, and so funny
    
 ### CrawlScore   
 Language: PHP   
-Crawl the Subscriptions's Score for student and do statistics   
+Crawl the Subscriptions's Score for student and do statistics    
+Storage the data to Mysql and sort the data to analysis    
    
 ### CryptoTools   
 Language: Javascript    
 conversion between the Ascii,Hexdecimal,EntityChar and so on    
 
-### ExploitCode  
+### GetPrivilege  
 Language: PHP    
 Vulnerability utilization code   
 
