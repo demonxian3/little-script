@@ -1,0 +1,5 @@
+#This is an example file
+192.168.1.1	2222	root	toor
+192.168.3.1	22	root	123123	/root/.ssh/id_rsa
+www.server.com	22	bans	123456
+

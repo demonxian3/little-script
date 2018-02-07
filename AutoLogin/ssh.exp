@@ -1,0 +1,55 @@
+#!/usr/bin/expect
+# @Author: Demon
+# How to use?
+# ssh.exp	192.168.1.2	22	root	youSSHPassWd
+# ssh.exp	192.168.1.2	22	root	youKeyPassWd	/path/to/RSA.rsa
+
+#MUST
+set REMOTE_HOST		[lindex $argv 0]
+set REMOTE_PORT		[lindex $argv 1]
+set REMOTE_USER 	[lindex $argv 2]
+set REMOTE_PASS		[lindex $argv 3]
+set REMOTE_RSA		[lindex $argv 4]
+
+set TIMEOUT		3
+
+if { "$argc" == "4" } {  
+
+    spawn ssh $REMOTE_USER@$REMOTE_HOST -p $REMOTE_PORT
+
+    expect {
+      "yes/no" {send "yes\r";exp_continue}				#first ssh login banner
+      "password:" {send "$REMOTE_PASS\r"}
+    
+    eof
+      "password:" {send "$REMOTE_PASS\r"}
+
+    eof
+      "Permission denied" {spawn echo "need the path to rsa file"} 	#if no path to RSA file
+    }
+
+} elseif { "$argc" == "5" } { 
+
+    spawn ssh $REMOTE_USER@$REMOTE_HOST -p $REMOTE_PORT -i "$REMOTE_RSA"
+
+    expect {
+      "yes/no" {send "yes\r";exp_continue}				#first ssh login banner
+      "Enter passphrase for key" {send "$REMOTE_PASS\r"}
+    eof
+      "Enter passphrase for key" {send "$REMOTE_PASS\r"}
+    }
+} else {
+    
+    spawn echo "Too few Parameters"
+    spawn echo "How to use?"
+    spawn echo "ssh.exp 192.168.1.2 22 root youSshPassWd"
+    spawn echo "ssh.exp 192.168.1.2 22 root youKeyPassWd /path/to/RSA.rsa"
+}
+
+#do some thing in remote server
+expect "$REMOTE_USER" 
+send "mkdir -p /tmp/hello\r"
+send "cd /tmp/hello\r"
+send "touch Hello World Demon ComeHere\r"
+
+interact

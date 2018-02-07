@@ -36,3 +36,11 @@ Calculate the Subnetting and IPaddress's conversion tools
 ### RiotShield
 Language: Bash    
 Prevent the violent cracking of the password    
+
+### AutoLogin      
+Language: Expect   
+Auto login ssh services,and batch processing something    
+
+## SystemTools   
+Language: Bash/Awk   
+Some command to get important information from old command   

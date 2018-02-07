@@ -1,0 +1,21 @@
+#!/usr/bin/expect
+
+set host 39.108.113.55
+set port 2222
+set user root
+set pass ysyhdrop9day
+
+spawn ssh $user@$host -p $port
+
+expect {
+  "yes/no" {send "yes\r"}
+  "password:" {send "$pass\r"}
+eof
+  "password:" {send "$pass\r"}
+}
+
+expect "$user@"
+send "cd /tmp\r"
+send "echo login successfully\r"
+
+interact
