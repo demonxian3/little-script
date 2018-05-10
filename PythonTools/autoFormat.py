@@ -5,9 +5,12 @@
 from __future__ import print_function
 import re
 
+inputFile = input("Enter input filename: ")
+outputFile = input("Enter output filename: ")
 
-fpr = open("target.txt", "r")
-fpw = open("final.txt","w")
+
+fpr = open(inputFile, "r")
+fpw = open(outputFile, "w")
 
 
 # pre process
@@ -33,11 +36,12 @@ for i in res:
 # HTML Tab
 preArr = preHTML.split("\r\n")
 
-myStack = []
-myLen = 0
+TabLen = 0
 
 #1 15 15 22 25
-["body", "table", "tbody", "tr", "td"]
+
+beginElems = ["<body", "<table", "<tbody", "<tr", "<td","<p","<div","<a","<span"]
+endElems   = ["</body", "</table", "</tbody", "</tr", "</td","</p","</div","</a","</span"]
 
 
 
@@ -48,12 +52,12 @@ for i in preArr:
 	# CSS Format
 	if "<style" in i:
 		isCSS = True
-		fpw.write("    "*myLen + i + "\r\n")
+		fpw.write("    "*TabLen + i + "\r\n")
 		continue
 
 	if "</style" in i:
 		isCSS = False
-		fpw.write("    "*myLen + i + "\r\n")
+		fpw.write("    "*TabLen + i + "\r\n")
 		continue
 
 	if isCSS:
@@ -64,67 +68,33 @@ for i in preArr:
 				fpw.write(j + "\r\n")
 
 			elif j == '{' or j == '}':
-				fpw.write("    "*myLen + j + "\r\n")
+				fpw.write("    "*TabLen + j + "\r\n")
 
 			else:
 				fpw.write(j)
 	
 
 	#HTML Format
-	if "<td" in i:
-		myStack.append(0)
-		myLen += 1
-		fpw.write("    "*myLen + i + "\r\n")
-		continue
+	isBreak = False
+	for j in beginElems:
+		if j in i:
+			TabLen += 1
+			fpw.write("    "*TabLen + i + "\r\n")
+			isBreak = True
+			break
 
+	if not isBreak:
+		for j in endElems:
+			if j in i:
+				fpw.write("    "*TabLen + i + "\r\n")
+				TabLen -= 1
+				isBreak = True
+				break
 
-	if "</td" in i:
-		fpw.write("    "*myLen + i + "\r\n")
-		myStack.pop()
-		myLen -= 1
-		continue
-
-	if "<tr" in i:
-		myStack.append(0)
-		myLen += 1
-		fpw.write("    "*myLen + i + "\r\n")
-		continue
-
-
-	if "</tr" in i:
-		fpw.write("    "*myLen + i + "\r\n")
-		myStack.pop()
-		myLen -= 1
-		continue
-
-	if "<tbody" in i:
-		myStack.append(0)
-		myLen += 1
-		fpw.write("    "*myLen + i + "\r\n")
-		continue
-
-
-	if "</tbody" in i:
-		fpw.write("    "*myLen + i + "\r\n")
-		myStack.pop()
-		myLen -= 1
-		continue
-
-	if "<body" in i:
-		myStack.append(0)
-		myLen += 1
-		fpw.write("    "*myLen + i + "\r\n")
-		continue
-
-
-	if "</body" in i:
-		fpw.write("    "*myLen + i + "\r\n")
-		myStack.pop()
-		myLen -= 1
-		continue
-
-	else:
-		fpw.write("    "*myLen + i + "\r\n")
+	
+	if not isBreak:
+		fpw.write("    "*TabLen + i + "\r\n")
+		
 
 
 
