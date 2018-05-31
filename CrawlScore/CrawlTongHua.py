@@ -1,4 +1,5 @@
 #coding: utf-8
+
 import sys
 import os
 import urllib  
@@ -54,7 +55,7 @@ def createDir():
 
 def crawlTitle():
     for code in industry_code:
-        #print "鍑嗗鐖彇 " + industry_code[code] +" 琛屼笟鐨勬墍鏈夋枃绔�";
+        #print "准备爬取 " + industry_code[code] +" 行业的所有文章";
         time.sleep(1)
         dirname = industry_code[code];
         url = "http://news.10jqka.com.cn/list/field/"+str(code)+"/index_1.shtml"
@@ -72,7 +73,7 @@ def crawlContent(url, dirname):
         res = rep.read().split("\n");
 
         alink = 0
-        #閬嶅巻姣忎釜琛屼笟鐨勬枃绔犻椤� 閬嶅巻涓夐〉
+        #遍历每个行业的文章首页 遍历三页
         for line in res:
 
             if 'arc-title' in line:
@@ -95,7 +96,7 @@ def crawlContent(url, dirname):
 
 
 def storageToFile(dirname, titleName, linkName):
-    print "鍑嗗鐖彇" + titleName + "鏂囩珷" 
+    print "准备爬取" + titleName + "文章" 
     filepath = dirname + "/"+titleName+".txt"
 
     if os.path.exists(filepath):
@@ -131,7 +132,7 @@ def storageToFile(dirname, titleName, linkName):
             pass
 
     else:
-        print  dirname + "鐩綍涓嶅瓨鍦�"
+        print  dirname + "目录不存在"
 
     
         
@@ -139,5 +140,4 @@ def storageToFile(dirname, titleName, linkName):
 getCode()
 createDir()
 crawlTitle()
-
 
