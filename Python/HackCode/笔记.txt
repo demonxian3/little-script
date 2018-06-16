@@ -1,0 +1,235 @@
+scapy 常用命令
+==========================================================================
+ls() 		//查看支持的协议对象
+lsc()		//查看函数
+show()		//查看数据包结构
+send()		//三层发包
+sr()		//三层收发
+sr1()		//三层收发只收一 timeout指定超时 verbose指定详情
+sendp()		//二层发包
+srp()		//二层收发
+srp1()		//二层收发只收一 timeout指定超时 verbose指定详情
+
+
+mac = getmacbyip(ip)    	//通过ip地址查询mac地址
+mac = get_if_hwaddr(eth0)	//通过接口查询mac
+ip  = get_if_addr(eth0) 	//通过接口查询ip
+
+
+
+
+为什么选用op=1(who has)能欺骗成功， 而op=2(is-at)无法欺骗成功？
+
+分析：
+
+使用whohas 时，攻击机发送 who has 192.168.10.66 tell 192.168.10.1
+
+所以当66主机接受到该询问包时，就会记录发送请求的 源IP 和 源MAC ，
+
+而源IP是假的， 所以欺骗成功
+
+
+而 使用is-at时，攻击机先询问 who has 192.168.10.66 tell 192.168.10.16
+
+16是攻击机，所以此时目标66收到该询问包时就已经记录了 192.168.10.16 和 16的MAC
+
+地址映射，而后发送的 192.168.10.1 is at 16的MAC 就已经没有用了
+
+
+
+为什么欺骗成功后，自己的真实的IP-MAC会被目标记录
+
+因为如果直接ARP发包，不指名 Ether包，系统默认会先去请求目标端mac地址
+
+这个过程就被记录了真实的，然后通过返回的目标mac构造第二层数据帧来发送
+
+只要自己发送广播帧，就可以避免请求查询mac地址的这一过程，从而避免漏出痕迹
+
+
+下面发包不带痕迹清理
+send(ARP(psrc="192.168.10.1", pdst="192.168.10.66"));
+
+
+
+下面是两个有效的发包（带痕迹清理）
+
+监听模式
+sendp(Ether(dst="ff:ff:ff:ff:ff:ff") / ARP(psrc="192.168.10.1", pdst="192.168.10.66"))
+
+防护模式
+sendp(Ether(dst="ff:ff:ff:ff:ff:ff") / ARP(psrc="192.168.10.16", hwsrc="8c:89:a5:8f:4a:d7", pdst="192.168.10.66"))
+
+
+subprocess 模块
+==============================================================
+from subprocess import *
+
+res = check_output("dir" ,shell=True);
+print res;
+ 
+p = Popen('ps aux',shell=True,stdout=subprocess.PIPE);
+out, err = p.communicate();
+if not err:
+    print out;
+
+
+command模块
+==============================================================
+code,res = commands.getstatusoutput(cmd)
+if code is 0:
+    print res
+
+
+scoket模块
+===============================================================
+from socket import *
+
+s = socket(AF_INET, SOCK_STREAM);	//DGRAW
+socket.setdefaulttimeout(2);
+s.bind((HOST, PORT));
+s.listen(10);
+s.accept();				//return conn, addr
+s.connect("192.168.10.1", 80);
+s.send("das");
+s.recv(1024);
+s.recvfrom(1024); 			 //UDPserver recv
+s.sendto(data, ("192.168.10.16", 6000)); //UDP send
+s.close();
+
+socket.gethostbyname("www.baidu.com");   //获取域名
+socket.error, msg: msg[0] -> code, msg[1] -> message;
+socket.gaierror: print "couldn't resolv";
+socket.inet_ntoa(ipaddr);		 //32位数字为位转化成字符串
+
+
+
+
+os 模块
+===============================================================
+os.path.exsist(path);
+os.system("ls");
+os.popen("dir").read();
+
+
+
+threading模块
+===============================================================
+from threading import *
+t = Thread(target=funName,  args=(1,));
+t.start()
+
+
+
+thread模块
+===============================================================
+start_new_thread(functioname ,(conn,))
+
+
+
+pcap
+===============================================================
+import pcap
+
+#ifname snaplen promisc timeout immediate
+pc = pcap.pcap("eth0", 65535, True); 
+pc.setfilter("tcp port 80");
+
+for time,data in pc:
+    print time;
+    print data;
+
+
+
+scapy-sniffer
+===============================================================
+from scapy.all import *
+
+def packetHandle(pkt):
+    if pkt[IP].src == '192.168.10.16':
+        print "ok";
+
+sniff(filter="tcp and port 80", prn=packetHandle, iface="eth0");
+
+
+
+
+pcapy
+===============================================================
+import pcapy
+
+
+def packetHandle(hdr, data):
+    print data;
+
+p = pcapy.open_live("eth0", 1500, 0, 100);
+p.setfilter("tcp and port 80");
+p.loop(0, packetHandle);
+
+
+
+
+
+
+
+nmap模块
+===============================================================
+pip install python-nmap
+
+import nmap
+from pprint import pprint 
+
+nm = nmap.PortScanner();
+res = nm.scan("192.168.10.132", arguments="-sV");
+pprint(res);
+
+res["scan"]=>
+{'192.168.10.132': {'addresses': {'ipv4': '192.168.10.132',
+                                  'mac': '00:0C:29:93:94:82'},
+                    'hostnames': [{'name': '', 'type': ''}],
+                    'status': {'reason': 'arp-response', 'state': 'up'},
+                    'tcp': {22: {'conf': '10',
+                                 'cpe': 'cpe:/a:openbsd:openssh:5.3',
+                                 'extrainfo': 'protocol 2.0',
+                                 'name': 'ssh',
+                                 'product': 'OpenSSH',
+                                 'reason': 'syn-ack',
+                                 'state': 'open',
+                                 'version': '5.3'},
+                            80: {'conf': '10',
+                                 'cpe': 'cpe:/a:apache:http_server:2.2.15',
+                                 'extrainfo': '(CentOS)',
+                                 'name': 'http',
+                                 'product': 'Apache httpd',
+                                 'reason': 'syn-ack',
+                                 'state': 'open',
+                                 'version': '2.2.15'},
+                            111: {'conf': '10',
+                                  'cpe': '',
+                                  'extrainfo': 'RPC #100000',
+                                  'name': 'rpcbind',
+                                  'product': '',
+                                  'reason': 'syn-ack',
+                                  'state': 'open',
+                                  'version': '2-4'}},
+                    'vendor': {'00:0C:29:93:94:82': 'VMware'}}}
+
+
+
+
+
+
+
+
+
+
+netdiscover 二层发现
+==========================================================================
+netdiscover -r 192.168.80.0/24 			主动发送arp广播
+netdiscover -p 					被动监听arp包
+
+
+nmap -sn -n 192.168.80.0/24 -oG - 		nmap扫描网段，格式化输出
+nmap -iL ip.txt					读取文件列表作为扫描目标
+nmap -sn -PA80 192.168.10.0/24 -oG -
+nmap -sn -PU54424 192.168.10.0/24 -oG -
+nmap -sn -sU 192.168.10.1 -oG -
