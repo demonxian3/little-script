@@ -32,9 +32,3 @@ Linux Bash shell, The main function have:
 
 ### Vim
 1. Vim for hotkey and impove work efficiency
-
-
-### Python 
-
-### Vim
-
