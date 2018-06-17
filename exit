@@ -1,0 +1,75 @@
+文件夹 PATH 列表
+卷序列号为 00000065 90FF:AF18
+C:.
+├─Bash
+│  ├─AutoLogin
+│  ├─RiotShield
+│  └─SystemTools
+├─CLang
+├─PHP
+│  ├─CrawlScore
+│  └─HackCode
+│      └─img
+├─Python
+│  ├─CrawlWeb
+│  ├─HackCode
+│  │  ├─ARP
+│  │  ├─BackDoor
+│  │  ├─Ether
+│  │  ├─ICMP
+│  │  ├─Other
+│  │  ├─Socket
+│  │  ├─STP
+│  │  ├─TCP
+│  │  └─UDP
+│  ├─QtProject
+│  │  ├─.idea
+│  │  │  └─inspectionProfiles
+│  │  ├─ConnectionView
+│  │  │  └─img
+│  │  ├─myNotepad
+│  │  ├─PWKeeper
+│  │  │  └─img
+│  │  └─venv
+│  │      ├─Include
+│  │      ├─Lib
+│  │      │  ├─distutils
+│  │      │  ├─encodings
+│  │      │  └─site-packages
+│  │      ├─Scripts
+│  │      └─tcl
+│  │          ├─tcl8.5
+│  │          │  ├─encoding
+│  │          │  ├─http1.0
+│  │          │  ├─msgs
+│  │          │  ├─opt0.4
+│  │          │  └─tzdata
+│  │          │      ├─Africa
+│  │          │      ├─America
+│  │          │      │  ├─Argentina
+│  │          │      │  ├─Indiana
+│  │          │      │  ├─Kentucky
+│  │          │      │  └─North_Dakota
+│  │          │      ├─Antarctica
+│  │          │      ├─Arctic
+│  │          │      ├─Asia
+│  │          │      ├─Atlantic
+│  │          │      ├─Australia
+│  │          │      ├─Brazil
+│  │          │      ├─Canada
+│  │          │      ├─Chile
+│  │          │      ├─Etc
+│  │          │      ├─Europe
+│  │          │      ├─Indian
+│  │          │      ├─Mexico
+│  │          │      ├─Pacific
+│  │          │      ├─SystemV
+│  │          │      └─US
+│  │          └─tk8.5
+│  │              ├─demos
+│  │              │  └─images
+│  │              ├─images
+│  │              ├─msgs
+│  │              └─ttk
+│  └─SimpleFun
+└─Vim

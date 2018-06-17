@@ -2,45 +2,39 @@
 ####  Small scripts, practical functions    
 
 ## Catalog    
-* -- Calculator    
-* -- CrawlScore    
-* -- CryptoTools    
-* -- GetPrivilege    
-* -- NetworkTools    
-* -- SSHprotecter.sh    
-   
-   
-### Calculator    
-Language: Javascript    
-Doing Add Subtract Multiply and Divide between the number   
-This is my first programe, although it is very simple, and so funny   
-   
-   
-### CrawlScore   
-Language: PHP   
-Crawl the Subscriptions's Score for student and do statistics    
-Storage the data to Mysql and sort the data to analysis    
-   
-### CryptoTools   
-Language: Javascript    
-conversion between the Ascii,Hexdecimal,EntityChar and so on    
+* -- Bash
+* -- Clang
+* -- PHP
+* -- Python 
+* -- Vim
 
-### GetPrivilege  
-Language: PHP    
-Vulnerability utilization code   
 
-### NetworkTools    
-Language: Javascript
-Calculate the Subnetting and IPaddress's conversion tools    
+### Bash 
+Linux Bash shell, The main function have:    
+1. Auto login SSH via except   
+2. Protect Server and monitor logfile connectPort and something else    
 
-### RiotShield
-Language: Bash    
-Prevent the violent cracking of the password    
 
-### AutoLogin      
-Language: Expect   
-Auto login ssh services,and batch processing something    
+### Clang  
+1. Openwrt code for Wrtnode   
+2. Hex and ASCII    
 
-## SystemTools   
-Language: Bash/Awk   
-Some command to get important information from old command   
+
+### PHP 
+1. Crawl student's score   
+2. Hacker code   
+
+### Python
+1. Crawl website   
+2. Qt project for UI windows program
+3. Some simple function via python 
+4. Very Strong hacker code
+
+### Vim
+1. Vim for hotkey and impove work efficiency
+
+
+### Python 
+
+### Vim
+
