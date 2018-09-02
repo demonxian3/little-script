@@ -1,0 +1,38 @@
+<script>
+  // escape = urlEncode
+  function setCookie(cname,cvalue,expiredays){
+    var exdate=new Date();
+    exdate.setDate(exdate.getDate()+expiredays);
+    document.cookie=cname+ "=" +escape(cvalue)+
+    ((expiredays==null) ? "" : ";expires="+exdate.toGMTString());
+  }
+  setCookie("Hello","12341",1);
+
+  function getCookie(cname){
+    if(document.cookie.length>0){
+      cstart = document.cookie.indexOf(cname+"=");
+      if(cstart!=-1)			         //如果找到了cname
+      cstart += cname.length+1                   //从cvalue的第一个位置开始
+      cend = document.cookie.indexOf(";",cstart) //从cvalue起找分号代表结束位
+      if(cend == -1) 
+        cend = document.cookie.length;           //若没找到则表示其为最后一个位置或只有一个cookie
+
+      return unescape(document.cookie.substring(cstart,cend));
+    }
+  }
+
+  function checkCookie(){
+    username = getCookie('username');
+    if(username!=null && username!='')
+      alert('welcome again' +username+'!')
+    else{
+      username = prompt('Please enter your name:',"")
+      if(username!=null && username!='')
+        setCookie('username',username,1)
+    }
+  }
+
+  setCookie('username','Dock',1);
+  checkCookie();
+  
+</script>
