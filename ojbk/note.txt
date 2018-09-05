@@ -1,0 +1,165 @@
+===================================================================
+WSADATA {}
+
+位置:
+ winsock.h
+
+作用:
+  这个结构被用来存储被WSAStartup函数调用后返回的Windows Sockets数据。
+  它包含Winsock.dll执行的数据。
+
+原型：
+  struct WSAData {
+    WORD wVersion;
+    WORD wHighVersion;
+    char szDescription[WSADESCRIPTION_LEN+1];
+    char szSystemStatus[WSASYSSTATUS_LEN+1];
+    unsigned short iMaxSockets;
+    unsigned short iMaxUdpDg;
+    char *lpVendorInfo;
+  }; 
+
+成员:
+  wVersion:
+    Windows Sockets DLL期望调用者使用的Windows Sockets规范的版本。 
+    高位字节存储副版本号, 低位字节存储主版本号，
+    可以用WORD MAKEWORD(BYTE,BYTE ) 返回这个值,
+    例如:MAKEWORD(1,1) 
+
+  wHighVersion:
+    DLL能够支持的Windows Sockets规范的最高版本。通常它与wVersion相同。
+
+  szDescription:
+    以null结尾的ASCII字符串，Windows Sockets DLL将对Windows Sockets实现的描述拷贝到这个字符串中，包括制造商标识。文本（最多可以有256个字符）可以包含任何字符，但是要注意不能包含控制字符和格式字符，应用程序对其最可能的使用方式是把它（可能被截断）显示在在状态信息中
+
+  szSystemStatus:
+    以null结尾的ASCII字符串，Windows Sockets DLL把有关的状态或配置信息拷贝到该字符串中。Windows Sockets DLL应当仅在这些信息对用户或支持人员有用时才使用它们，它不应被作为szDescription域的扩展。
+
+  iMaxSockets:
+    单个进程能够打开的socket的最大数目,Windows Sockets的实现能提供一个全局的socket池，可以为任何进程分配；或者它也可以为socket分配属于进程的资源。
+
+  iMaxUdpDg:
+    Windows Sockets应用程序能够发送或接收的最大的用户数据包协议（UDP）的数据包大小，以字节为单位。如果实现方式没有限制，那么iMaxUdpDg为零.WinSock2.0版中已被废弃
+
+  lpVendorInfo:
+    指向销售商的数据结构的指针。这个结构的定义（如果有）超出了WindowsSockets规范的范围。WinSock2.0版中已被废弃
+
+
+WSAStartup 给WSADATA 结构的成员分配些列值：
+    wVersion wVersionRequested 数值
+　　wHighVersion wVersionRequested 数值
+　　szDescription NULL 字符串
+　　szSystemStatus NULL 字符串
+　　iMaxSockets 100
+　　iMaxUdpDg 0
+　　lpVendorInfo NULL  
+
+===================================================================
+WSAStartup (){}
+
+位置：
+    winsock2.h
+    ws2_32.lib
+
+https://docs.microsoft.com/zh-cn/windows/desktop/api/winsock/nf-winsock-wsastartup
+
+
+===================================================================
+
+STARTUPINFO {}
+
+typedef struct _STARTUPINFO {
+	DWORD cb;			 	 //包含STARTUPINFO结构中的字节数.如果Microsoft将来扩展该结构,它可用作版本控制手段.应用程序必须将cb初始化为sizeof(STARTUPINFO)
+    PSTR lpReserved;		 //保留。必须初始化为NULL
+    PSTR lpDesktop;			 //用于标识启动应用程序所在的桌面的名字。如果该桌面存在，新进程便与指定的桌面相关联。如果桌面不存在，便创建一个带有默认属性的桌面，并使用为新进程指定的名字。如果lpDesktop是NULL（这是最常见的情况 ),那么该进程将与当前桌面相关联
+    PSTR lpTitle;			 //用于设定控制台窗口的名称。如果lpTitle是NULL，则可执行文件的名字将用作窗口名.This parameter must be NULL for GUI or console processes that do not create a new console window.
+    DWORD dwX;				 //用于设定应用程序窗口相对屏幕左上角位置的x 坐标（以像素为单位）。
+    DWORD dwY;				 //对于GUI processes用CW_USEDEFAULT作为CreateWindow的x、y参数，创建它的第一个重叠窗口。若是创建控制台窗口的应用程序，这些成员用于指明相对控制台窗口的左上角的位置
+    DWORD dwXSize;			 //用于设定应用程序窗口的宽度（以像素为单位）
+    DWORD dwYSize;			 //子进程将CW_USEDEFAULT 用作CreateWindow 的nWidth、nHeight参数来创建它的第一个重叠窗口。若是创建控制台窗口的应用程序，这些成员将用于指明控制台窗口的宽度
+    DWORD dwXCountChars;	 //用于设定子应用程序的控制台窗口的宽度（屏幕显示的字节列）和高度（字节行）（以字符为单位）
+    DWORD dwYCountChars;
+    DWORD dwFillAttribute;   //用于设定子应用程序的控制台窗口使用的文本和背景颜色
+    DWORD dwFlags;           //请参见下一段和表4-7 的说明
+    WORD wShowWindow;        //用于设定如果子应用程序初次调用的ShowWindow 将SW_*作为nCmdShow 参数传递时，该应用程序的第一个重叠窗口应该如何出现。本成员可以是通常用于ShowWindow 函数的任何一个SW_*标识符，除了SW_SHOWDEFAULT.
+    WORD cbReserved2;        //保留。必须被初始化为0
+    PBYTE lpReserved2;       //保留。必须被初始化为NULL
+    HANDLE hStdInput;        //用于设定供控制台输入和输出用的缓存的句柄。按照默认设置，hStdInput 用于标识键盘缓存，hStdOutput 和hStdError用于标识控制台窗口的缓存
+    HANDLE hStdOutput;
+    HANDLE hStdError;
+} STARTUPINFO, *LPSTARTUPINFO;
+
+当Windows 创建新进程时，它将使用该结构的有关成员。大多数应用程序将要求生成的应用程序仅仅使用默认值。至少应将该结构中的所有成员初始化为零，然后将cb成员设置为该结构的大小：
+
+STARTF_USESIZE						//使用dwXSize 和dwYSize 成员
+STARTF_USESHOWWINDOW				//使用wShowWindow 成员
+STARTF_USEPOSITION					//使用dwX 和dwY 成员
+STARTF_USECOUNTCHARS                //使用dwXCountChars 和dwYCount Chars 成员
+STARTF_USEFILLATTRIBUTE				//使用dwFillAttribute 成员
+STARTF_USESTDHANDLES				//使用hStdInput 、hStdOutput 和hStdError 成员
+STARTF_RUN_FULLSCREEN				//强制在x86 计算机上运行的控制台应用程序以全屏幕方式启动运行
+
+===================================================================
+process_information {}
+
+typedef struct_PROCESS_INFORMATION{
+    HANDLE hProcess;
+    HANDLE hThread;
+    DWORD dwProcessId;
+    DWORD dwThreadId;
+} PROCESS_INFORMATION;
+
+  hProcess：返回新进程的句柄
+  hThread：返回主线程的句柄
+  dwProcessId：返回一个全局进程标识符。该标识符用于标识一个进程。从进程被创建到终止，该值始终有效
+  dwThreadId: 返回一个全局线程标识符。该标识符用于标识一个线程。
+===================================================================
+ZeroMemory 用0来填充一块内存区域
+
+void ZeroMemory( PVOID Destination,SIZE_T Length );
+    Destination :指向一块准备用0来填充的内存区域的开始地址。
+    Length :准备用0来填充的内存区域的大小，按字节来计算。
+
+===================================================================
+CreateProcess
+BOOL CreateProcess
+(
+LPCTSTR lpApplicationName,
+LPTSTR lpCommandLine,
+LPSECURITY_ATTRIBUTES lpProcessAttributes,
+LPSECURITY_ATTRIBUTES lpThreadAttributes,
+BOOL bInheritHandles,
+DWORD dwCreationFlags,
+LPVOID lpEnvironment,
+LPCTSTR lpCurrentDirectory,
+LPSTARTUPINFO lpStartupInfo,
+LPPROCESS_INFORMATIONlpProcessInformation
+);
+
+lpApplicationName:
+  用来指定可执行模块的字符串。这个字符串可以是可执行模块的绝对路径，也可以是相对路径，在后一种情况下，函数使用当前驱动器和目录建立可执行模块的路径
+
+  这个字符串可以是可执行模块的绝对路径，也可以是相对路径，在后一种情况下，函数使用当前驱动器和目录建立可执行模块的路径
+
+lpCommandLine：
+  该字符串指定要执行的命令行。
+  这个参数可以为空，那么函数将使用lpApplicationName参数指定的字符串当做要运行的程序的命令行。
+
+
+  果lpApplicationName和lpCommandLine参数都不为空，那么lpApplicationName参数指定将要被运行的模块，lpCommandLine参数指定将被运行的模块的命令行。新运行的进程可以使用GetCommandLine函数获得整个命令行。
+
+===================================================================
+WaitForSingleObject 当等待仍在挂起状态时，句柄被关闭，那么函数行为是未定义的
+  在某一线程中调用该函数时，线程暂时挂起，如果在挂起的dwMilliseconds毫秒内，线程所等待的对象变为有信号状态，则该函数立即返回；如果超时时间已经到达dwMilliseconds毫秒，但hHandle所指向的对象还没有变成有信号状态，函数照样返回
+
+===================================================================
+LPCTSTR:
+    用来表示你的字符是否使用UNICODE, 如果你的程序定义了UNICODE或者其他相关的宏，那么这个字符或者字符串将被作为UNICODE字符串，否则就是标准的ANSI字符串, 本质上还是 char* / const char*
+
+    L表示long指针 这是为了兼容Windows 3.1等16位操作系统遗留下来的，
+        在win32中以及其他的32位操作系统中， long指针和near指针及far修饰符都是为了兼容的作用。没有实际意义。
+    P表示这是一个指针
+    C表示是一个常量
+    T表示在Win32环境中， 有一个_T宏
+    STR表示这个变量是一个字符串
+
