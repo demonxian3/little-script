@@ -103,6 +103,7 @@ function showMessage(){
 }
 
 function showActionList(){
+
     echo '[st|dt|ct|dst|sct]'
     echo '[sr|dr|ur|ir] '
     echo '[sd|dd|cd|cc|sv]'
@@ -155,10 +156,19 @@ while [[ -n "$1" ]];do
         "-g")  g=1 ;         shift 1;;
         "-y")  y=1 ;         shift 1;;
         "-h")  help;         shift 1;;
+        "st"|"dt"|"ct"|"dst"|"sct"|"sr"|"dr"|"ur"|"ir"|"sd"|"dd"|"cd"|"cc"|"sv"|"sql"|"bak"|"src"|"into"|"cu"|"du"|"up"|"gu"|"sg"|"su")
+        a=$1; shift 1;;
         *) showMessage $WAR_OPT_INVALID $1; shift 1;;
     esac
 done
 
+    echo '[st|dt|ct|dst|sct]'
+    echo '[sr|dr|ur|ir] '
+    echo '[sd|dd|cd|cc|sv]'
+    echo '[sql|bak|src|into]'
+    echo '[cu|du|up|gu|sg|su]'
+    echo '[.v|.u|.d]'
+    
 checkOption '-a';
 
 case $a in
