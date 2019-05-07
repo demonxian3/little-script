@@ -1,13 +1,14 @@
 #!/bin/bash
-#version: 2.0
+#version: 2.2
 #author:  Khazix Li
-#date:    2019/05/05
+#date:    2019/05/07
 
 #config
 version="2.0"                   #shell version
 username=root                   #username
 password=root                   #password
 database=mysql                  #default database
+host="localhost"                #default host
 table=""                        #default table
 where="1=1"                     #default where condition
 column="*"                      #default column
@@ -29,31 +30,38 @@ function help(){
 
 if [[ -n $a ]];then
     case $a in 
-        'sr')      echo "select \$c from \$d.\$t [where \$w]";exit ;;
-        'ir')      echo "insert into \$d.\$t(\$c) values(\$v)";exit ;;
-        'ur')      echo "update \$d.\$t set (\$v) [where \$w]";exit ;;
-        'dr')      echo "delete from \$d.\$t [where \$w]";exit ;;
-        'st')      echo "show tables";exit ;;
-        'dt')      echo "drop table \$d.\$t";exit ;;
-        'ct')      echo "create table \$d.\$t(\$c)";exit ;;
-        'sct')     echo "show create table \$d.\$t";exit ;;
-        'dst')     echo "desc \$d.\$t";exit ;;
-        'sd')      echo "show databases";exit ;;
-        'cd')      echo "create database \$d";exit ;;
-        'dd')      echo "drop database \$d";exit ;;
-        'cc')      echo "select from infor where tname = \$d.\$t";exit ;;
-        'sv')      echo "show variables like '%\$v%'";exit ;;
-        'sql')     echo "execute \$v;";exit ;;
-        'into')    echo "into interact shell";exit ;;
-        'bak')     echo "mysqldump \$d";exit ;;
-        'src')     echo "source \$v";exit ;;
-        'pwd')     echo "mysqladmin \$v";exit ;;
-        'ver')     echo "select version();";exit ;;
+        'sr')      echo "select \$c from \$d.\$t [where \$w]"; ;;
+        'ir')      echo "insert into \$d.\$t(\$c) values(\$v)"; ;;
+        'ur')      echo "update \$d.\$t set (\$v) [where \$w]"; ;;
+        'dr')      echo "delete from \$d.\$t [where \$w]"; ;;
+        'st')      echo "show tables"; ;;
+        'dt')      echo "drop table \$d.\$t"; ;;
+        'ct')      echo "create table \$d.\$t(\$c)"; ;;
+        'sct')     echo "show create table \$d.\$t"; ;;
+        'dst')     echo "desc \$d.\$t"; ;;
+        'sd')      echo "show databases"; ;;
+        'cd')      echo "create database \$d"; ;;
+        'dd')      echo "drop database \$d"; ;;
+        'cc')      echo "select from infor where tname = \$d.\$t"; ;;
+        'sv')      echo "show variables like '%\$v%'"; ;;
+        'su')      echo "select \$c from mysql.user where \$w" ;;
+        'cu')      echo "create user \$u identified by password '\$v'" ;;
+        'du')      echo "drop user \$u" ;;
+        'gu')      echo "grant \$v on \$d.\$t to \$u" ;;
+        'sg')      echo "show grants for \$u";;
+        'up')      echo "mysqladmin \$v"; ;;
+        'sql')     echo "execute \$v;"; ;;
+        'into')    echo "into interact shell"; ;;
+        'bak')     echo "mysqldump \$d"; ;;
+        'src')     echo "source \$v"; ;;
+        'ver')     echo "select version();"; ;;
     esac
+    exit;
 fi
 
     cat <<EOF
 Usage: db [OPTION]... 
+  -u,  --user                specify user@host
   -c,  --column              specify column
   -t,  --table               specify table 
   -d,  --database            specify database
@@ -71,7 +79,7 @@ Usage: db [OPTION]...
                              database action: sd,cd,dd
                              column action: cc
                              variables: sv
-                             mysql function: sql,into,src,pwd,bak
+                             mysql function: sql,into,src,bak
                              show shell variables: .v .u .d
 EOF
     exit;
@@ -98,7 +106,8 @@ function showActionList(){
     echo '[st|dt|ct|dst|sct]'
     echo '[sr|dr|ur|ir] '
     echo '[sd|dd|cd|cc|sv]'
-    echo '[sql|bak|src|pwd|into]'
+    echo '[sql|bak|src|into]'
+    echo '[cu|du|up|gu|sg|su]'
     echo '[.v|.u|.d]'
 }
 
@@ -111,6 +120,7 @@ function checkOption(){
             '-c') if [[ -z $c ]];then showMessage $ERR_OPT_REQUIRE '-c'; fi; ;;
             '-w') if [[ -z $w ]];then showMessage $ERR_OPT_REQUIRE '-w'; fi; ;;
             '-v') if [[ -z $v ]];then showMessage $ERR_OPT_REQUIRE '-v'; fi; ;;
+            '-u') if [[ -z $u ]];then showMessage $ERR_OPT_REQUIRE '-u'; fi; ;;
             '-y') if [[ -z $y ]];then showMessage $WAR_OPR_CONFIRM '-y'; fi; ;;
         esac
         shift;
@@ -124,6 +134,7 @@ function setIfDefault(){
             '-t') if [[ -z $t ]];then t="$table"   ;else t="$t" ;fi; ;;
             '-c') if [[ -z $c ]];then c="$column"  ;else c="$c" ;fi; ;;
             '-w') if [[ -z $w ]];then w="$where"   ;else w="$w" ;fi; ;;
+            '-u') if [[ -z $u ]];then u="$username@$host"   ;else u="$u" ;fi; ;;
         esac
         shift;
     done
@@ -133,6 +144,7 @@ if [[ -z $1 ]];then help; fi
 
 while [[ -n "$1" ]];do
     case $1 in
+        "-u")  if [[ -n "$2" ]]; then u=$2;shift 2; else showMessage $ERR_VAL_REQUIRE '-u'; fi ;;
         "-a")  if [[ -n "$2" ]]; then a=$2;shift 2; else showMessage $ERR_VAL_REQUIRE '-a'; fi ;;
         "-d")  if [[ -n "$2" ]]; then d=$2;shift 2; else showMessage $ERR_VAL_REQUIRE '-d'; fi ;;
         "-t")  if [[ -n "$2" ]]; then t=$2;shift 2; else showMessage $ERR_VAL_REQUIRE '-t'; fi ;;
@@ -226,7 +238,27 @@ case $a in
         mysqldump -u$username -p$password $d > $d-$(date +%Y%m%d).sql
         exit;
     ;;
-    "pwd")
+    "su")
+        setIfDefault '-w' '-c';
+        sql="select $c from mysql.user where $w";
+    ;;
+    "cu")
+        checkOption '-u' '-v' '-y';
+        sql="create user $u identified by '$v'";
+    ;;
+    "du")
+        checkOption '-u' '-y';
+        sql="drop user $u ";
+    ;;
+    "gu")
+        checkOption '-u' '-y' '-v' '-t' '-d';
+        sql="grant $v on $d.$t to $u;flush privileges;";
+    ;;
+    "sg")
+        checkOption '-u';
+        sql="show grants for $u";
+    ;;
+    "up")
         checkOption '-v';
         mysqladmin -u$username -p$password password $v;
         if [[ $? -eq 0 ]];then sed -i "s/$password/$v/g" $0; fi;
