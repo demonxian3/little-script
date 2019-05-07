@@ -157,7 +157,7 @@ while [[ -n "$1" ]];do
         "-y")  y=1 ;         shift 1;;
         "-h")  help;         shift 1;;
         "-st"|"-dt"|"-ct"|"-dst"|"-sct"|"-sr"|"-dr"|"-ur"|"-ir"|"-sd"|"-dd"|"-cd"|"-cc"|"-sv"|"-sql"|"-bak"|"-src"|"-into"|"-cu"|"-du"|"-up"|"-gu"|"-sg"|"-su")
-        a=$1; shift 1;;
+        a=${1:1}; shift 1;;
         *) showMessage $WAR_OPT_INVALID $1; shift 1;;
     esac
 done
