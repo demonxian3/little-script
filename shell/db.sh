@@ -6,8 +6,8 @@
 #config
 version="4.0"                   #shell version
 username=root                   
-password=30caa3216fbb4bac       
-database=newzhnc_xyqkl_cn       
+password=root       
+database=db
 host="localhost"                #default host
 table="user"                    #default table
 where="1=1"                     #default where condition
