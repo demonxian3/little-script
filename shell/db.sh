@@ -1,13 +1,13 @@
 #!/bin/bash
-#version: 4.0
+#version: 4.2
 #author:  Khazix Li
 #date:    2019/05/17
 
 #config
 version="4.0"                   #shell version
 username=root                   
-password=root       
-database=db
+password=yourpasswd      
+database=mysql
 host="localhost"                #default host
 table="user"                    #default table
 where="1=1"                     #default where condition
@@ -78,6 +78,9 @@ if [[ -n $a ]];then
         'ct')      echo "create table \$d.\$t(\$c)"; ;;
         'sct')     echo "show create table \$d.\$t"; ;;
         'dst')     echo "desc \$d.\$t"; ;;
+        'ata')     echo "alter table \$d.\$t add \$v "; ;;
+        'atd')     echo "alter table \$d.\$t  drop \$v "; ;;
+        'atm')     echo "alter table \$d.\$t modify \$v "; ;;
         'sd')      echo "show databases"; ;;
         'cd')      echo "create database \$d"; ;;
         'dd')      echo "drop database \$d"; ;;
@@ -131,7 +134,7 @@ function putActLst(){
     #ACT
     echo -e $fyan;
     echo '[action list]:'
-    echo '[table]    st dt ct cc dst sct '
+    echo '[table]    st dt ct cc dst sct ata atd atm'
     echo '[record]   sr dr ur ir  '
     echo '[database] sd dd cd sv '
     echo '[function] sql bak src shl chp ver '
@@ -147,8 +150,8 @@ function putMsg(){
     $NOR_PUTVAR)  echo -e "$bbla[NOR_PUTVAR]$ccls$fbla$2$ccls";   exit;;
     $NOR_PUTSQL)  echo -e "$bblu[NOR_PUTSQL]$ccls\n$fblu$2$ccls"; ;;
     $NOR_PUTRES)  echo -e "$bvio[NOR_PUTRES]$ccls\n$fvio$2";      ;;
-    $NOR_HITTBN)  echo -e "$bpin[CUR_TABLEN]$ccls$fpin$2$ccls";   ;;
-    $NOR_HITDBN)  echo -e "$byan[CUR_DBNAME]$ccls$fyan$2$ccls";   ;;
+    $NOR_HITTBN)  echo -e "$bpin[CUR_TABLEN]$ccls $fpin$2$ccls";   ;;
+    $NOR_HITDBN)  echo -e "$byan[CUR_DBNAME]$ccls $fyan$2$ccls";   ;;
     $WAR_OPRCFM)  echo -e "$byel[WAR_OPRCFM]$ccls$fyel use -y make sure to do it$ccls"; noConfirm=1; ;;
     $WAR_OPTIVL)  echo -e "$byel[WAR_OPTIVL]$ccls$fyel -$2 is invalid option.$ccls";            ;;
     $WAR_CACNUL)  echo -e "$byel[WAR_OPTIVL]$ccls$fyel $2 isn't hit in cache.$ccls";            ;;
@@ -212,6 +215,12 @@ function setSql(){
     'dst')sql="DESC $d.$t";                       
      ;;
     'sct')sql="SHOW CREATE TABLE $d.$t";          
+     ;;
+    'ata')sql="ALTER TABLE $d.$t ADD $v";          
+     ;;
+    'atd')sql="ALTER TABLE $d.$t DROP $v";          
+     ;;
+    'atm')sql="ALTER TABLE $d.$t MODIFY $v";          
      ;;
     'sd') sql="SHOW DATABASES;";                  
      ;;
@@ -285,7 +294,7 @@ while [[ -n "$1" ]];do
         "-g")  g=1 ;         shift 1;;
         "-y")  y=1 ;         shift 1;;
         "-h")  help;         shift 1;;
-        "-st"|"-dt"|"-ct"|"-dst"|"-sct"|"-sr"|"-dr"|"-ur"|"-ir"|"-sd"|"-dd"|"-cd"|"-cc"|"-sv"|"-sql"|"-bak"|"-src"|"-shl"|"-cu"|"-du"|"-up"|"-gu"|"-sg"|"-su"|"-chp"|"-ver")
+        "-st"|"-dt"|"-ct"|"-dst"|"-sct"|"-sr"|"-dr"|"-ur"|"-ir"|"-sd"|"-dd"|"-cd"|"-cc"|"-sv"|"-sql"|"-bak"|"-src"|"-shl"|"-cu"|"-du"|"-up"|"-gu"|"-sg"|"-su"|"-chp"|"-ver"|"-ata"|"-atd"|"-atm")
         a="${1:1}"; shift 1;;
         *)  putMsg $WAR_OPTIVL $1; shift 1;;
     esac
@@ -304,6 +313,9 @@ case $a in
     "st")  setDef d;       ;;
     "dst") chkOpt t;       setDef d;       ;;
     "sct") chkOpt t;       setDef d;       ;;
+    "ata") chkOpt t v y;   setDef d;       ;;
+    "atd") chkOpt t v y;   setDef d;       ;;
+    "atm") chkOpt t v y;   setDef d;       ;;
     "sd")  ;;
     "cd")  chkOpt d;         ;;
     "dd")  chkOpt d y;       ;;
@@ -316,9 +328,9 @@ case $a in
     "sg")  chkOpt u;         ;;
     "up")  chkOpt u v y;     ;;
     "shl") mysql -u$username -p$password -A; exit; ;;
-    "bak") chkOpt d; mysqldump -u$username -p$password $d > $d-$(date +%Y%m%d).sql exit; ;;
+    "bak") chkOpt d; mysqldump -u$username -p$password $d > $d-$(date +%Y%m%d).sql ;exit; ;;
     "src") chkOpt d v y; ;;
-    "sql") chkOpt d v y; ;;
+    "sql") chkOpt d v y; echo "use $d;$v" | mysql -u$username -p$password; exit; ;;
     ".v")  putMsg $NOR_PUTVAR $version; ;;
     ".u")  putMsg $NOR_PUTVAR "$username  $password"; ;;
     ".d")  putMsg $NOR_PUTVAR $database; ;;
