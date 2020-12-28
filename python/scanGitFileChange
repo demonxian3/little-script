@@ -1,0 +1,271 @@
+#coding: utf-8
+
+import re;
+import sys;
+import subprocess;
+from optparse import OptionParser
+from threading import Thread
+
+hHistoryCommit = {};
+
+def execute(cmd):
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    output, err = p.communicate();
+    try:
+        return output.decode('utf-8');
+    except:
+        return output;
+
+def diff(sHash1, sHash2):
+    sCurHash = nCommit.hash;
+    sPreHash = nCommit.prev.hash;
+
+    sCmd = 'git diff %s %s ' % (sCurHash, sPreHash);
+    sDiff = execute(sCmd);
+
+    aDiff = str(sDiff).split('\n');
+    
+    for sDiffLine in aDiff:
+        aMatch = re.match(r"\+\+\+ b/(.*?)$", sDiffLine);
+        if aMatch:
+            sFilename = aMatch.group(1)
+            if sFilename not in dChangeFileLog:
+                dChangeFileLog[sFilename] = {};
+
+        
+        aMatch = re.match(r"@@ -\d+,\d+ \+(.*?),\d @@", sDiffLine);
+        if aMatch:
+            iLine = aMatch.group(1);
+            dChangeFileLog[sFilename][iLine] = 1
+
+class Node:
+    def __init__(self, sCommitHash, sComment, sTime, sAuthor, pPrev=None, pNext=None):
+        self.hash = sCommitHash;
+        self.comment = sComment;
+        self.time = sTime;
+        self.author = sAuthor;
+
+        self.prev = pPrev;
+        self.next = pNext;
+
+class Link:
+    def __init__(self):
+        self.head = Node('','','','',None,None);
+        self.lenght = 0;
+
+
+# class ScanChange:
+#     def __init__(self):
+#         self.aInclude = [];
+#         self.aExclude = [];
+
+
+#     def parseOptions():
+
+
+
+aInclude = [];
+aExclude = [];
+sStartHash = "";
+sStopHash = "";
+bScanning = True;
+
+usage="%prog [OPTION]... [COMMIT1] [COMMIT2]";
+
+parser = OptionParser(usage=usage);
+parser.add_option('-i', '--include', type='string', action="append", dest='include', help="包含关键字，多个关键字使用空格分隔，元素间逻辑与");
+parser.add_option('-e', '--exclude', type='string', action="append", dest='exclude', help="剔除关键字，多个关键字使用空格分隔");
+parser.add_option('-l', '--line', action="store_true", dest='line', help="显示文件修改的行号");
+parser.add_option('-r', '--rtx', type='string',  dest='rtx', help="必填项：rtx");
+(opts, args) = parser.parse_args();
+
+if not opts.rtx:
+    print("rtx 为必填项，请使用-r/--rtx参数指定你的rtx");
+    sys.exit();
+
+if not opts.include:
+    print("请至少指定一个过滤关键字，否则历史提交版本数据会很多，使用-i/--include");
+    sys.exit();
+
+
+if opts.include:
+    aInclude = opts.include;
+
+sRtx = opts.rtx;
+
+if opts.exclude:
+    aExclude = opts.exclude;
+
+bShowLine = False;
+if opts.line == True:
+    bShowLine = opts.showLine;
+
+if len(args) != 0 and len(args) != 2:
+    print("传递commit区间时，需要指定两个commit版本");
+    sys.exit();
+
+if len(args):
+    sStartHash = args[0];
+    sStopHash = args[1];
+    bScanning = False;
+
+sCmd = 'git log  --pretty=format:"%H|%s|%cr|%an" --abbrev-commit --reverse';
+sHistoryCommit = execute(sCmd);
+aHistoryCommit = sHistoryCommit.split('\n');
+
+lHistoryCommit = Link();
+pCommit = lHistoryCommit.head;
+
+dChangeFileLog = {};
+dMergeFileLog = {};
+
+aSearchCommitHash = [];
+
+sLastPushHash = "";
+
+for sCommit in aHistoryCommit:
+    aCommit = sCommit.split('|');
+
+    if len(aCommit) == 0:
+        continue;
+    
+    nCommit = Node(*aCommit[:4], pCommit, None);
+    pCommit.next = nCommit;
+    pCommit = nCommit;
+
+    sHash = nCommit.hash;
+    sTime = nCommit.time;
+    sAuthor = nCommit.author;
+    sComment = nCommit.comment;
+
+    # if (sStartHash in sHash) or (sStopHash in sHash ):
+    #     bScanning = not bScanning;
+    
+    # if not bScanning:
+    #     continue;
+
+    #当前分支为Merge分支，剔除其他人修改的文件
+    if "Merge" in sComment and nCommit.prev.hash == sLastPushHash:
+
+        # if sLastPushHash == '9e009749891a399a0846779b4616f331eaf3d982':
+        #     print(nCommit.hash);
+        #     print(nCommit.prev.prev.hash);
+
+        # def checkMerge(sHash1, sHash2):
+        sHash1 = sLastPushHash;
+        sHash2 = nCommit.hash;
+        sCmd = 'git diff --name-only %s %s ' % (sHash1, sHash2);
+        sDiff = execute(sCmd);
+
+        if not sDiff:
+            print("命令执行异常: git diff  --name-only %s %s " % (sHash1, sHash2));
+
+        aDiff = str(sDiff).split('\n');
+
+        # if sLastPushHash == '9e009749891a399a0846779b4616f331eaf3d982':
+        #     for sFilename in dChangeFileLog:
+        #         aDiffLines = dChangeFileLog[sFilename] 
+        #         print("%s => %s" % (sFilename, ", ".join(aDiffLines.keys())))
+
+        for sFilename in aDiff:
+            if not sFilename:
+                continue;
+            if sFilename in dChangeFileLog:
+                # if sLastPushHash == '9e009749891a399a0846779b4616f331eaf3d982':
+                #     print("删除: " + sFilename);
+                del dChangeFileLog[sFilename];
+            dMergeFileLog[sFilename] = 1;
+
+        
+        # tMerge = Thread(target=checkMerge, args=(nCommit.hash, sLastPushHash));
+        # tMerge.start();
+
+
+    hHistoryCommit[sHash] = nCommit;
+
+    bWillPush = True;
+
+    if sAuthor != sRtx:
+        continue;
+
+    for sSearch in aInclude:
+        if sSearch not in (sHash + sTime + sAuthor + sComment):
+            bWillPush = False;
+            break;
+
+    for sSearch in aExclude:
+        if sSearch in  (sHash + sTime + sAuthor + sComment):
+            bWillPush = False;
+            break;
+    
+    if bWillPush:
+        print("正在扫描历史版本: %s %s %s %s" %(sHash, sTime, sAuthor, sComment))
+        sCurHash = nCommit.hash;
+        sPreHash = nCommit.prev.hash;
+        sLastPushHash = nCommit.hash;
+
+        if (not sCurHash) or (not sPreHash):
+            continue
+
+        sCmd = 'git diff --name-only %s %s ' % (sCurHash, sPreHash);
+        sDiff = execute(sCmd);
+        aDiff = sDiff.split('\n');
+
+        for sFilename in aDiff:
+            if sFilename not in dChangeFileLog and len(sFilename):
+                dChangeFileLog[sFilename] = {};
+
+        if not bShowLine:
+            continue;
+
+        sCmd = 'git diff %s %s ' % (sCurHash, sPreHash);
+        sDiff = execute(sCmd);
+        
+        # if sCurHash == '9e009749891a399a0846779b4616f331eaf3d982':
+            # print(sCmd)
+            # print(sDiff)
+
+        if not sDiff:
+            print("命令执行异常: git diff %s %s " % (sCurHash, sPreHash));
+
+        aDiff = str(sDiff).split('\n');
+        
+        
+        for sDiffLine in aDiff:
+            aMatch = re.match(r"\+\+\+ b/(.*?)$", sDiffLine);
+            if aMatch:
+                sFilename = aMatch.group(1)
+                if sFilename not in dChangeFileLog:
+                    dChangeFileLog[sFilename] = {};
+
+            
+            aMatch = re.match(r"@@ -\d+,\d+ \+(.*?),\d @@", sDiffLine);
+            if aMatch:
+                if sFilename not in dChangeFileLog:
+                    dChangeFileLog[sFilename] = {};
+
+                iLine = aMatch.group(1);
+                dChangeFileLog[sFilename][iLine] = 1
+                
+       
+
+print("\n\n扫描结果:");
+
+
+for sFilename in dChangeFileLog:
+    if not sFilename:
+        continue;
+    aDiffLines = dChangeFileLog[sFilename] 
+    if not bShowLine:
+        print(sFilename);
+    else:
+        print("%s => %s" % (sFilename, ", ".join(aDiffLines.keys())))
+        # aSearchCommitHash.append(sHash)
+
+
+if len(dMergeFileLog):
+    print("\n\n以下文件检测存在于Merge，可能为其他人修改的文件：");
+
+
+for sFilename in dMergeFileLog.keys():
+    print(sFilename)
