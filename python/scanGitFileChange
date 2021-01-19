@@ -2,270 +2,325 @@
 
 import re;
 import sys;
+import pprint
 import subprocess;
+from datetime import datetime;
 from optparse import OptionParser
 from threading import Thread
 
-hHistoryCommit = {};
-
-def execute(cmd):
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-    output, err = p.communicate();
-    try:
-        return output.decode('utf-8');
-    except:
-        return output;
-
-def diff(sHash1, sHash2):
-    sCurHash = nCommit.hash;
-    sPreHash = nCommit.prev.hash;
-
-    sCmd = 'git diff %s %s ' % (sCurHash, sPreHash);
-    sDiff = execute(sCmd);
-
-    aDiff = str(sDiff).split('\n');
-    
-    for sDiffLine in aDiff:
-        aMatch = re.match(r"\+\+\+ b/(.*?)$", sDiffLine);
-        if aMatch:
-            sFilename = aMatch.group(1)
-            if sFilename not in dChangeFileLog:
-                dChangeFileLog[sFilename] = {};
-
-        
-        aMatch = re.match(r"@@ -\d+,\d+ \+(.*?),\d @@", sDiffLine);
-        if aMatch:
-            iLine = aMatch.group(1);
-            dChangeFileLog[sFilename][iLine] = 1
+#d directory
+#s string
+#i number
+#b boolean
+#n node
+#l link
+#a array
+#dt datetime
 
 class Node:
-    def __init__(self, sCommitHash, sComment, sTime, sAuthor, pPrev=None, pNext=None):
-        self.hash = sCommitHash;
+    def __init__(self, sShortHash, sFullHash, sComment, sTime, sAuthor, pPrev=None, pNext=None):
+        self.time = 0;
+        self.id = sShortHash;
+        self.hash = sFullHash;
         self.comment = sComment;
-        self.time = sTime;
         self.author = sAuthor;
-
         self.prev = pPrev;
         self.next = pNext;
 
+        if sTime:
+            iTime = int(sTime);
+            dtTime = datetime.fromtimestamp(iTime);
+            self.time = dtTime.strftime("%Y-%m-%d %H:%M:%S");
+
+
 class Link:
     def __init__(self):
-        self.head = Node('','','','',None,None);
+        self.head = Node('','','','','');
         self.lenght = 0;
 
 
-# class ScanChange:
-#     def __init__(self):
-#         self.aInclude = [];
-#         self.aExclude = [];
-
-
-#     def parseOptions():
-
-
-
-aInclude = [];
-aExclude = [];
-sStartHash = "";
-sStopHash = "";
-bScanning = True;
-
-usage="%prog [OPTION]... [COMMIT1] [COMMIT2]";
-
-parser = OptionParser(usage=usage);
-parser.add_option('-i', '--include', type='string', action="append", dest='include', help="包含关键字，多个关键字使用空格分隔，元素间逻辑与");
-parser.add_option('-e', '--exclude', type='string', action="append", dest='exclude', help="剔除关键字，多个关键字使用空格分隔");
-parser.add_option('-l', '--line', action="store_true", dest='line', help="显示文件修改的行号");
-parser.add_option('-r', '--rtx', type='string',  dest='rtx', help="必填项：rtx");
-(opts, args) = parser.parse_args();
-
-if not opts.rtx:
-    print("rtx 为必填项，请使用-r/--rtx参数指定你的rtx");
-    sys.exit();
-
-if not opts.include:
-    print("请至少指定一个过滤关键字，否则历史提交版本数据会很多，使用-i/--include");
-    sys.exit();
-
-
-if opts.include:
-    aInclude = opts.include;
-
-sRtx = opts.rtx;
-
-if opts.exclude:
-    aExclude = opts.exclude;
-
-bShowLine = False;
-if opts.line == True:
-    bShowLine = opts.showLine;
-
-if len(args) != 0 and len(args) != 2:
-    print("传递commit区间时，需要指定两个commit版本");
-    sys.exit();
-
-if len(args):
-    sStartHash = args[0];
-    sStopHash = args[1];
-    bScanning = False;
-
-sCmd = 'git log  --pretty=format:"%H|%s|%cr|%an" --abbrev-commit --reverse';
-sHistoryCommit = execute(sCmd);
-aHistoryCommit = sHistoryCommit.split('\n');
-
-lHistoryCommit = Link();
-pCommit = lHistoryCommit.head;
-
-dChangeFileLog = {};
-dMergeFileLog = {};
-
-aSearchCommitHash = [];
-
-sLastPushHash = "";
-
-for sCommit in aHistoryCommit:
-    aCommit = sCommit.split('|');
-
-    if len(aCommit) == 0:
-        continue;
+class Options:
     
-    nCommit = Node(*aCommit[:4], pCommit, None);
-    pCommit.next = nCommit;
-    pCommit = nCommit;
+    def __init__(self):
+        self.options = {
+            'first': ['boolean', '显示文件首次修改的日期和哈希，默认显示文件最后一次的修改日期和哈希'],
+            'include': ['array', '包含关键字，多个关键字使用空格分隔，元素间逻辑与'],
+            'exclude': ['array', '剔除关键字，多个关键字使用空格分隔'],
+            'verbose': ['boolean', '显示扫描详情'],
+            'typesort': ['boolean', '按照文件类型格式'],
+            'rtx': ['string', '提交作者'],
+            'all': ['boolean', '全扫描'],
+        }
 
-    sHash = nCommit.hash;
-    sTime = nCommit.time;
-    sAuthor = nCommit.author;
-    sComment = nCommit.comment;
+        usage = "%prog [OPTION]... [COMMIT1] [COMMIT2]";
+        parser = OptionParser(usage=usage);
 
-    # if (sStartHash in sHash) or (sStopHash in sHash ):
-    #     bScanning = not bScanning;
-    
-    # if not bScanning:
-    #     continue;
+        for key in self.options:
+            sShort = '-' + key[0];
+            sFull = '--' + key;
+            sType = self.options[key][0];
+            sHelp = self.options[key][1];
 
-    #当前分支为Merge分支，剔除其他人修改的文件
-    if "Merge" in sComment and nCommit.prev.hash == sLastPushHash:
+            if sType == 'array':
+                parser.add_option(sShort, sFull, action="append", type="string", dest=key, help=sHelp, default=[]);
+            if sType == 'boolean':
+                parser.add_option(sShort, sFull, action="store_true", dest=key, help=sHelp, default=False);
+            if sType == 'string':
+                parser.add_option(sShort, sFull, type="string", dest=key, help=sHelp, default='');
 
-        # if sLastPushHash == '9e009749891a399a0846779b4616f331eaf3d982':
-        #     print(nCommit.hash);
-        #     print(nCommit.prev.prev.hash);
+        (self.opts, self.args) = parser.parse_args();
+        self.check();
 
-        # def checkMerge(sHash1, sHash2):
-        sHash1 = sLastPushHash;
-        sHash2 = nCommit.hash;
-        sCmd = 'git diff --name-only %s %s ' % (sHash1, sHash2);
-        sDiff = execute(sCmd);
+    def check(self):
+        dOptions = self.opts;
+        aArgumnet = self.args;
 
-        if not sDiff:
-            print("命令执行异常: git diff  --name-only %s %s " % (sHash1, sHash2));
+        if not dOptions.rtx:
+            print("rtx 为必填项，请使用-r/--rtx参数指定你的rtx");
+            sys.exit();
 
-        aDiff = str(sDiff).split('\n');
+        if not dOptions.include and not dOptions.all:
+            print("请至少指定一个过滤关键字，否则历史提交版本数据会很多，使用-i/--include");
+            sys.exit();
 
-        # if sLastPushHash == '9e009749891a399a0846779b4616f331eaf3d982':
-        #     for sFilename in dChangeFileLog:
-        #         aDiffLines = dChangeFileLog[sFilename] 
-        #         print("%s => %s" % (sFilename, ", ".join(aDiffLines.keys())))
+        self.typesort = dOptions.typesort;
+        self.rtx = dOptions.rtx;
+        self.include = dOptions.include;
+        self.exclude = dOptions.exclude;
+        self.verbose = dOptions.verbose;
+        self.first = dOptions.first;
+        self.mode = 'scan-all';
 
-        for sFilename in aDiff:
-            if not sFilename:
-                continue;
-            if sFilename in dChangeFileLog:
-                # if sLastPushHash == '9e009749891a399a0846779b4616f331eaf3d982':
-                #     print("删除: " + sFilename);
-                del dChangeFileLog[sFilename];
-            dMergeFileLog[sFilename] = 1;
-
-        
-        # tMerge = Thread(target=checkMerge, args=(nCommit.hash, sLastPushHash));
-        # tMerge.start();
-
-
-    hHistoryCommit[sHash] = nCommit;
-
-    bWillPush = True;
-
-    if sAuthor != sRtx:
-        continue;
-
-    for sSearch in aInclude:
-        if sSearch not in (sHash + sTime + sAuthor + sComment):
-            bWillPush = False;
-            break;
-
-    for sSearch in aExclude:
-        if sSearch in  (sHash + sTime + sAuthor + sComment):
-            bWillPush = False;
-            break;
-    
-    if bWillPush:
-        print("正在扫描历史版本: %s %s %s %s" %(sHash, sTime, sAuthor, sComment))
-        sCurHash = nCommit.hash;
-        sPreHash = nCommit.prev.hash;
-        sLastPushHash = nCommit.hash;
-
-        if (not sCurHash) or (not sPreHash):
-            continue
-
-        sCmd = 'git diff --name-only %s %s ' % (sCurHash, sPreHash);
-        sDiff = execute(sCmd);
-        aDiff = sDiff.split('\n');
-
-        for sFilename in aDiff:
-            if sFilename not in dChangeFileLog and len(sFilename):
-                dChangeFileLog[sFilename] = {};
-
-        if not bShowLine:
-            continue;
-
-        sCmd = 'git diff %s %s ' % (sCurHash, sPreHash);
-        sDiff = execute(sCmd);
-        
-        # if sCurHash == '9e009749891a399a0846779b4616f331eaf3d982':
-            # print(sCmd)
-            # print(sDiff)
-
-        if not sDiff:
-            print("命令执行异常: git diff %s %s " % (sCurHash, sPreHash));
-
-        aDiff = str(sDiff).split('\n');
-        
-        
-        for sDiffLine in aDiff:
-            aMatch = re.match(r"\+\+\+ b/(.*?)$", sDiffLine);
-            if aMatch:
-                sFilename = aMatch.group(1)
-                if sFilename not in dChangeFileLog:
-                    dChangeFileLog[sFilename] = {};
-
+        if aArgumnet :
+            if len(aArgumnet) != 2:
+                print("传递commit区间时，需要指定两个commit版本");
+                sys.exit();
             
-            aMatch = re.match(r"@@ -\d+,\d+ \+(.*?),\d @@", sDiffLine);
-            if aMatch:
-                if sFilename not in dChangeFileLog:
-                    dChangeFileLog[sFilename] = {};
+            self.startHash = aArgumnet[0];
+            self.stopHash = aArgumnet[1];
 
-                iLine = aMatch.group(1);
-                dChangeFileLog[sFilename][iLine] = 1
+            if len(startHash) == 40 and len(stopHash) == 40:
+                self.mode = 'scan-fullhash-range';
+            else:
+                self.mode = 'scan-shorthash-range';
+
+
+class Pdiff:
+    def execute(self, cmd):
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        output, err = p.communicate();
+        try:
+            return output.decode('utf-8');
+        except:
+            return output;
+
+
+    def getCommitHistory(self):
+        sCmd = 'git log --pretty=format:"%h|%H|%s|%ct|%an" --abbrev-commit --reverse';
+        sHistoryCommit = self.execute(sCmd);
+        return sHistoryCommit.split('\n');
+
+
+    def diff(self, nCur, nPrev, bMerge=False):
+        sId = nCur.id;
+        sRtx = nCur.author;
+        dtTime = nCur.time;
+        sHash1 = nCur.hash;
+        sHash2 = nPrev.hash;
+
+        if bMerge:
+            sCmd = 'git diff --name-status %s %s ' % (sHash1, sHash2);
+        else:    
+            sCmd = 'git diff --name-status %s %s ' % (sHash2, sHash1);
+
+        sDiff = self.execute(sCmd);
+
+        if not sDiff:
+            print("命令执行异常: "+sCmd);
+        
+        aDiff = str(sDiff).split('\n');
+
+        for sLine in aDiff:
+            aRow = sLine.split();
+            nCount = len(aRow);
+
+            if not nCount:
+                continue;
+
+            sOpera = aRow[0][0];
+            sFilename = aRow[1];
+            sRename =  aRow[2] if nCount>2 else ''
+
+            if not bMerge:
+                if sFilename not in self.dFileLog[sOpera]:
+                    self.dFileLog[sOpera][sFilename] = { 'rename': sRename, 'time': dtTime, 'hash': sId, 'rtx': sRtx};
+                elif not self.options.first:
+                    self.dFileLog[sOpera][sFilename]['rename'] = sRename;
+                    self.dFileLog[sOpera][sFilename]['time'] = dtTime;
+                    self.dFileLog[sOpera][sFilename]['hash'] = sId;
+                    self.dFileLog[sOpera][sFilename]['rtx'] = sRtx;
+            else:
+                if sFilename in self.dFileLog[sOpera]:
+                    self.dMergeLog[sOpera][sFilename] = self.dFileLog[sOpera][sFilename];
+                    del self.dFileLog[sOpera][sFilename];
+
+
+    def showFileLog(self, dFileLog):
+        dOperaMap = {
+            'R': ['重名', '\033[1;33m'],
+            'A': ['添加', '\033[1;32m'],
+            'M': ['修改', '\033[1;36m'],
+            'C': ['复制', '\033[1;33m'],
+            'D': ['移除', '\033[1;35m'],
+        }
+
+        if not self.options.typesort:
+            for sOpera in dFileLog:
+                dFileInfo = dFileLog[sOpera];
+                for sFilename in dFileInfo:
+                    sLabel = dOperaMap[sOpera][0];
+                    sColor = dOperaMap[sOpera][1];
+                    dInfo = dFileInfo[sFilename];
+
+                    sId = dInfo['hash'];
+                    sRtx = dInfo['rtx'];
+                    dtTime = dInfo['time'];
+                    sRename = dInfo['rename'];
+
+                    if sOpera == 'R':
+                        print("\033[37m[%s] \033[31m(%s) \033[1;34m%-12s\033[0m - %s%s %s => %s\033[0m" % (dtTime, sId, sRtx, sColor, sLabel, sRename, sFilename ));
+                    else:
+                        print("\033[37m[%s] \033[31m(%s) \033[1;34m%-12s\033[0m - %s%s %s\033[0m" % (dtTime, sId, sRtx, sColor, sLabel, sFilename));
+
+        
+        else:
+            dFileLog = self.sortFileLog(dFileLog);
+            for sFileType in dFileLog:
+                print("\033[1;37m" + sFileType + ': \033[0m');
+                for sFilename in dFileLog[sFileType]:
+                    for sOpera in dFileLog[sFileType][sFilename]:
+                        sLabel = dOperaMap[sOpera][0];
+                        sColor = dOperaMap[sOpera][1];
+                        dInfo = dFileLog[sFileType][sFilename][sOpera];
+
+                        sId = dInfo['hash'];
+                        sRtx = dInfo['rtx'];
+                        dtTime = dInfo['time'];
+                        sRename = dInfo['rename'];
+
+                        if sOpera == 'R':
+                            print("\033[37m[%s] \033[31m(%s) - %s%s %s => %s\033[0m" % (dtTime, sId, sColor, sLabel, sFilename, sRename));
+                        else:
+                            print("\033[37m[%s] \033[31m(%s) - %s%s %s\033[0m" % (dtTime, sId, sColor, sLabel, sFilename));
+        
+
+
+    def sortFileLog(self, dFileLog):
+        dResult = {
+            'js': {},
+            'biz': {},
+            'css': {},
+            'tpl': {},
+            'cfg': {},
+            'model': {},
+            'controller':{},
+            'other':{},
+        }
+
+
+        dCheckKey = {
+            'js': '.js',
+            'biz': '/lib/biz',
+            'cfg': '.cfg',
+            'css': '.css',
+            'tpl': '.tpl',
+            'model': 'Model.class.php',
+            'controller': 'Controller.php',
+        }
+
+        for sOpera in dFileLog:
+            for sFilename in dFileLog[sOpera]:
+                bHasType = False;
+                for sType in dCheckKey:
+                    if dCheckKey[sType] in sFilename:
+                        if sFilename not in dResult[sType]:
+                            dResult[sType][sFilename] = {sOpera: {}};
+                        
+                        dResult[sType][sFilename][sOpera] = dFileLog[sOpera][sFilename];
+                        bHasType = True;
+                        break;
                 
-       
+                if not bHasType:
+                    if sFilename not in dResult['other']:
+                        dResult['other'][sFilename] = {sOpera: {}};
 
-print("\n\n扫描结果:");
+                    dResult['other'][sFilename][sOpera] = dFileLog[sOpera][sFilename];
 
+        return dResult;
 
-for sFilename in dChangeFileLog:
-    if not sFilename:
-        continue;
-    aDiffLines = dChangeFileLog[sFilename] 
-    if not bShowLine:
-        print(sFilename);
-    else:
-        print("%s => %s" % (sFilename, ", ".join(aDiffLines.keys())))
-        # aSearchCommitHash.append(sHash)
+                    
 
+    def __init__(self):
+        self.dFileLog = {'M':{}, 'D':{}, 'R':{}, 'A':{}, 'C':{}, 'T':{}, 'U':{}, 'X':{}, 'B':{}};
+        self.dMergeLog = {'M':{}, 'D':{}, 'R':{}, 'A':{}, 'C':{}, 'T':{}, 'U':{}, 'X':{}, 'B':{}};
+        self.dCommitLog = {};
+        self.options = Options();
 
-if len(dMergeFileLog):
-    print("\n\n以下文件检测存在于Merge，可能为其他人修改的文件：");
+        lHistoryCommit = Link();
+        pCommit = lHistoryCommit.head;
 
+        sLastPushHash = "";
+        aHistoryCommit = self.getCommitHistory();
 
-for sFilename in dMergeFileLog.keys():
-    print(sFilename)
+        for sCommit in aHistoryCommit:
+            aCommit = sCommit.split('|');
+
+            if len(aCommit) == 0:
+                continue;
+
+            nCommit = Node(*aCommit[:5], pCommit, None);
+            pCommit.next = nCommit;
+            pCommit = nCommit;
+
+            sId = nCommit.id;
+            sHash = nCommit.hash;
+            sAuthor = nCommit.author;
+            sComment = nCommit.comment;
+            dtTime = nCommit.time;
+
+            if "Merge" in sComment and nCommit.prev.hash == sLastPushHash:
+                self.diff(nCommit, nCommit.prev, True);
+            
+            bWillPush = True;
+            self.dCommitLog[sId] = nCommit;
+
+            for sSearch in self.options.include:
+                if sSearch not in (sHash + dtTime + sAuthor + sComment):
+                    bWillPush = False;
+                    break;
+
+            for sSearch in self.options.exclude:
+                if sSearch in  (sHash + dtTime + sAuthor + sComment):
+                    bWillPush = False;
+                    break;
+            
+            if sAuthor != self.options.rtx:
+                continue;
+
+            if bWillPush:
+                if self.options.verbose:
+                    print("正在扫描历史版本: %s %s %s %s" %(sHash, dtTime, sAuthor, sComment))
+                
+                if (not nCommit.hash) or (not nCommit.prev.hash):
+                    continue
+
+                self.diff(nCommit, nCommit.prev);
+                sLastPushHash = nCommit.hash;
+
+        
+        self.showFileLog(self.dFileLog);
+        print('\n\n\n*** 以下文件检测于Merge中，可能为其他人修改的文件 ***');
+        self.showFileLog(self.dMergeLog);
+    
+if __name__ == '__main__':
+    Pdiff();
