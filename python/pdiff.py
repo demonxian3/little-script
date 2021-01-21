@@ -1,9 +1,9 @@
 #coding: utf-8
 #pip install colorama 
 
-import os;
+#import pdb;
 import sys;
-import pprint
+#import pprint;
 import subprocess;
 from datetime import datetime;
 from optparse import OptionParser
@@ -72,7 +72,7 @@ class Color:
             Color.bGREEN   = '\033[1;32m';
             Color.bYELLOW  = '\033[1;33m';
             Color.bBLUE    = '\033[1;34m';
-            Color.bMAGENTA = '\033[1;35m';
+            Color.bPINK    = '\033[1;35m';
             Color.bCYAN    = '\033[1;36m';
             Color.bWHITE   = '\033[1;37m';
             Color.RST      = '\033[0m';
@@ -208,8 +208,9 @@ class Pdiff:
             sComment = nCommit.comment;
             dtTime = nCommit.time;
 
-            if "Merge" in sComment and nCommit.prev.hash == sLastPushHash:
+            if "Merge" in sComment and nCommit.prev.hash == sLastPushHash and sAuthor == self.options.rtx:
                 self.diff(nCommit, nCommit.prev, True);
+                continue;
             
             
             bWillDiff = self.openDiff;
@@ -277,10 +278,11 @@ class Pdiff:
         sHash1 = nCur.hash;
         sHash2 = nPrev.hash;
 
-        if bMerge:
+        sCmd = 'git diff --name-status %s %s ' % (sHash2, sHash1);
+
+        if nCur.author != nPrev.author:
             sCmd = 'git diff --name-status %s %s ' % (sHash1, sHash2);
-        else:    
-            sCmd = 'git diff --name-status %s %s ' % (sHash2, sHash1);
+
 
         sDiff = self.execute(sCmd);
 
@@ -313,14 +315,15 @@ class Pdiff:
                     self.hasMergeFile = True;
                     self.dMergeLog[sOpera][sFilename] = self.dFileLog[sOpera][sFilename];
                     del self.dFileLog[sOpera][sFilename];
+            
 
     def showFileLog(self, dFileLog):
         dOperaMap = {
-            'R': ['重名', Color.bYELLOW  ],
-            'A': ['添加', Color.bGREEN   ],
-            'M': ['修改', Color.bCYAN    ],
-            'C': ['复制', Color.bYELLOW  ],
-            'D': ['移除', Color.bPINK    ],
+            'R': ['重名', Color.bYELLOW],
+            'A': ['添加', Color.bGREEN ],
+            'M': ['修改', Color.bCYAN  ],
+            'C': ['复制', Color.bYELLOW],
+            'D': ['移除', Color.bPINK  ],
         }
 
         if not self.options.typesort:
@@ -337,7 +340,7 @@ class Pdiff:
                     sRename = dInfo['rename'];
 
                     if sOpera == 'R':
-                        print("[%s] %s(%s) - %s%s %s => %s%s" % (dtTime, Color.RED, sId,  sColor, sLabel, sRename, sFilename, Color.RST ));
+                        print("[%s] %s(%s) - %s%s %s => %s%s" % (dtTime, Color.RED, sId,  sColor, sLabel, sRename,sFilename, Color.RST ));
                     else:
                         print("[%s] %s(%s) - %s%s %s%s" % (dtTime, Color.RED, sId,  sColor, sLabel, sFilename, Color.RST));
 
@@ -358,7 +361,7 @@ class Pdiff:
                         sRename = dInfo['rename'];
 
                         if sOpera == 'R':
-                            print("[%s] %s(%s) - %s%s %s => %s%s" % (dtTime, Color.RED, sId,  sColor, sLabel, sRename, sFilename, Color.RST ));
+                            print("[%s] %s(%s) - %s%s %s => %s%s" % (dtTime, Color.RED, sId,  sColor, sLabel, sRename,sFilename, Color.RST ));
                         else:
                             print("[%s] %s(%s) - %s%s %s%s" % (dtTime, Color.RED, sId,  sColor, sLabel, sFilename, Color.RST));
         
@@ -388,7 +391,6 @@ class Pdiff:
                     dResult['other'][sFilename][sOpera] = dFileLog[sOpera][sFilename];
 
         return dResult;
-
 
 if __name__ == '__main__':
     Pdiff();
